@@ -3,9 +3,9 @@
 /**
  * @file plugins/importexport/native/filter/IssueGalleyNativeXmlFilter.inc.php
  *
- * Copyright (c) 2014-2018 Simon Fraser University
- * Copyright (c) 2000-2018 John Willinsky
- * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
+ * Copyright (c) 2014-2020 Simon Fraser University
+ * Copyright (c) 2000-2020 John Willinsky
+ * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class IssueGalleyNativeXmlFilter
  * @ingroup plugins_importexport_native
@@ -92,7 +92,7 @@ class IssueGalleyNativeXmlFilter extends NativeExportFilter {
 	 * @param $issueGalley IssueGalley
 	 */
 	function addFile($doc, $issueGalleyNode, $issueGalley) {
-		$issueFileDao = DAORegistry::getDAO('IssueFileDAO');
+		$issueFileDao = DAORegistry::getDAO('IssueFileDAO'); /* @var $issueFileDao IssueFileDAO */
 		$issueFile = $issueFileDao->getById($issueGalley->getFileId());
 
 		if ($issueFile) {

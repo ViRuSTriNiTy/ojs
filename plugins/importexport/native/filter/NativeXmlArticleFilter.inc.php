@@ -3,9 +3,9 @@
 /**
  * @file plugins/importexport/native/filter/NativeXmlArticleFilter.inc.php
  *
- * Copyright (c) 2014-2018 Simon Fraser University
- * Copyright (c) 2000-2018 John Willinsky
- * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
+ * Copyright (c) 2014-2020 Simon Fraser University
+ * Copyright (c) 2000-2020 John Willinsky
+ * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class NativeXmlArticleFilter
  * @ingroup plugins_importexport_native
@@ -36,14 +36,6 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 	}
 
 	/**
-	 * Get the published submission DAO for this application.
-	 * @return DAO
-	 */
-	function getPublishedSubmissionDAO() {
-		return DAORegistry::getDAO('PublishedArticleDAO');
-	}
-
-	/**
 	 * Get the method name for inserting a published submission.
 	 * @return string
 	 */
@@ -61,7 +53,7 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 		$context = $deployment->getContext();
 		$sectionAbbrev = $node->getAttribute('section_ref');
 		if ($sectionAbbrev !== '') {
-			$sectionDao = DAORegistry::getDAO('SectionDAO');
+			$sectionDao = DAORegistry::getDAO('SectionDAO'); /* @var $sectionDao SectionDAO */
 			$section = $sectionDao->getByAbbrev($sectionAbbrev, $context->getId());
 			if (!$section) {
 				$deployment->addError(ASSOC_TYPE_SUBMISSION, NULL, __('plugins.importexport.native.error.unknownSection', array('param' => $sectionAbbrev)));
@@ -80,13 +72,13 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 		$importedObjects =& parent::process($document);
 
 		// Index imported content
-		import('classes.search.ArticleSearchIndex');
+		$articleSearchIndex = Application::getSubmissionSearchIndex();
 		foreach ($importedObjects as $submission) {
 			assert(is_a($submission, 'Submission'));
-			ArticleSearchIndex::articleMetadataChanged($submission);
-			ArticleSearchIndex::submissionFilesChanged($submission);
+			$articleSearchIndex->submissionMetadataChanged($submission);
+			$articleSearchIndex->submissionFilesChanged($submission);
 		}
-		ArticleSearchIndex::articleChangesFinished();
+		$articleSearchIndex->submissionChangesFinished();
 
 		return $importedObjects;
 	}
@@ -101,7 +93,7 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 		$deployment = $this->getDeployment();
 		$sectionAbbrev = $node->getAttribute('section_ref');
 		if ($sectionAbbrev !== '') {
-			$sectionDao = DAORegistry::getDAO('SectionDAO');
+			$sectionDao = DAORegistry::getDAO('SectionDAO'); /* @var $sectionDao SectionDAO */
 			$section = $sectionDao->getByAbbrev($sectionAbbrev, $submission->getContextId());
 			if (!$section) {
 				$deployment->addError(ASSOC_TYPE_SUBMISSION, $submission->getId(), __('plugins.importexport.native.error.unknownSection', array('param' => $sectionAbbrev)));
@@ -178,7 +170,7 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 		}
 		// Caps on class name for consistency with imports, whose filter
 		// group names are generated implicitly.
-		$filterDao = DAORegistry::getDAO('FilterDAO');
+		$filterDao = DAORegistry::getDAO('FilterDAO'); /* @var $filterDao FilterDAO */
 		$importFilters = $filterDao->getObjectsByGroup('native-xml=>' . $importClass);
 		$importFilter = array_shift($importFilters);
 		return $importFilter;
@@ -201,9 +193,9 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 
 	/**
 	 * Class-specific methods for published submissions.
-	 * @param PublishedArticle $submission
+	 * @param PublishedSubmission $submission
 	 * @param DOMElement $node
-	 * @return PublishedArticle
+	 * @return PublishedSubmission
 	 */
 	function populatePublishedSubmission($submission, $node) {
 		$deployment = $this->getDeployment();
@@ -258,7 +250,7 @@ class NativeXmlArticleFilter extends NativeXmlSubmissionFilter {
 				}
 			}
 		}
-		$issueDao = DAORegistry::getDAO('IssueDAO');
+		$issueDao = DAORegistry::getDAO('IssueDAO'); /* @var $issueDao IssueDAO */
 		$issue = null;
 		$issuesByIdentification = $issueDao->getIssuesByIdentification($context->getId(), $vol, $num, $year, $titles);
 		if ($issuesByIdentification->getCount() != 1) {

@@ -3,9 +3,9 @@
 /**
  * @file plugins/importexport/native/filter/NativeXmlIssueFilter.inc.php
  *
- * Copyright (c) 2014-2018 Simon Fraser University
- * Copyright (c) 2000-2018 John Willinsky
- * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
+ * Copyright (c) 2014-2020 Simon Fraser University
+ * Copyright (c) 2000-2020 John Willinsky
+ * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class NativeXmlIssueFilter
  * @ingroup plugins_importexport_native
@@ -65,7 +65,7 @@ class NativeXmlIssueFilter extends NativeImportFilter {
 		$deployment = $this->getDeployment();
 		$context = $deployment->getContext();
 
-		$issueDao = DAORegistry::getDAO('IssueDAO');
+		$issueDao = DAORegistry::getDAO('IssueDAO'); /* @var $issueDao IssueDAO */
 		// if the issue identification matches an existing issue, flag to process only child objects
 		$issueExists = false;
 		$issue = $this->_issueExists($node);
@@ -78,6 +78,7 @@ class NativeXmlIssueFilter extends NativeImportFilter {
 			$issue->setPublished($node->getAttribute('published'));
 			$issue->setCurrent($node->getAttribute('current'));
 			$issue->setAccessStatus($node->getAttribute('access_status'));
+			if ($issue) $issueDao->updateCurrent($context->getId());
 			$issueDao->insertObject($issue);
 			$deployment->addProcessedObjectId(ASSOC_TYPE_ISSUE, $issue->getId());
 		}
@@ -212,7 +213,7 @@ class NativeXmlIssueFilter extends NativeImportFilter {
 	 * @param $issue Issue
 	 */
 	function parseIssueGalley($n, $issue) {
-		$filterDao = DAORegistry::getDAO('FilterDAO');
+		$filterDao = DAORegistry::getDAO('FilterDAO'); /* @var $filterDao FilterDAO */
 		$importFilters = $filterDao->getObjectsByGroup('native-xml=>IssueGalley');
 		assert(count($importFilters)==1); // Assert only a single unserialization filter
 		$importFilter = array_shift($importFilters);
@@ -248,7 +249,7 @@ class NativeXmlIssueFilter extends NativeImportFilter {
 	 * @param $issue Issue
 	 */
 	function parseArticle($n, $issue) {
-		$filterDao = DAORegistry::getDAO('FilterDAO');
+		$filterDao = DAORegistry::getDAO('FilterDAO'); /* @var $filterDao FilterDAO */
 		$importFilters = $filterDao->getObjectsByGroup('native-xml=>article');
 		assert(count($importFilters)==1); // Assert only a single unserialization filter
 		$importFilter = array_shift($importFilters);
@@ -287,7 +288,7 @@ class NativeXmlIssueFilter extends NativeImportFilter {
 		$context = $deployment->getContext();
 
 		// Create the data object
-		$sectionDao = DAORegistry::getDAO('SectionDAO');
+		$sectionDao = DAORegistry::getDAO('SectionDAO'); /* @var $sectionDao SectionDAO */
 		$section = $sectionDao->newDataObject();
 		$section->setContextId($context->getId());
 		$section->setReviewFormId($node->getAttribute('review_form_id'));
@@ -415,7 +416,7 @@ class NativeXmlIssueFilter extends NativeImportFilter {
 		$deployment = $this->getDeployment();
 		$context = $deployment->getContext();
 		$issue = null;
-		$issueDao = DAORegistry::getDAO('IssueDAO');
+		$issueDao = DAORegistry::getDAO('IssueDAO'); /* @var $issueDao IssueDAO */
 		foreach ($node->getElementsByTagName('issue_identification') as $n) {
 			$searchIssue = $issueDao->newDataObject();
 			$this->parseIssueIdentification($n, $searchIssue, false);

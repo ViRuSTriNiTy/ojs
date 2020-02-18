@@ -3,9 +3,9 @@
 /**
  * @file controllers/grid/issues/form/IssueForm.inc.php
  *
- * Copyright (c) 2014-2018 Simon Fraser University
- * Copyright (c) 2003-2018 John Willinsky
- * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
+ * Copyright (c) 2014-2020 Simon Fraser University
+ * Copyright (c) 2003-2020 John Willinsky
+ * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class IssueForm
  * @ingroup controllers_grid_issues_form
@@ -32,6 +32,7 @@ class IssueForm extends Form {
 		parent::__construct('controllers/grid/issues/form/issueForm.tpl');
 
 		$form = $this;
+		$this->addCheck(new FormValidatorRegExp($this, 'volume', 'optional', 'editor.issues.volumeRequired', '/^[0-9]+$/i'));
 		$this->addCheck(new FormValidatorCustom($this, 'showVolume', 'optional', 'editor.issues.volumeRequired', function($showVolume) use ($form) {
 			return !$showVolume || $form->getData('volume') ? true : false;
 		}));
@@ -54,14 +55,14 @@ class IssueForm extends Form {
 	 * @return array
 	 */
 	function getLocaleFieldNames() {
-		$issueDao = DAORegistry::getDAO('IssueDAO');
+		$issueDao = DAORegistry::getDAO('IssueDAO'); /* @var $issueDao IssueDAO */
 		return $issueDao->getLocaleFieldNames();
 	}
 
 	/**
 	 * @copydoc Form::fetch()
 	 */
-	function fetch($request) {
+	function fetch($request, $template = null, $display = false) {
 		if ($this->issue) {
 			$templateMgr = TemplateManager::getManager($request);
 			$templateMgr->assign(array(
@@ -91,7 +92,7 @@ class IssueForm extends Form {
 			);
 		}
 
-		return parent::fetch($request);
+		return parent::fetch($request, $template, $display);
 	}
 
 	/**
@@ -99,9 +100,9 @@ class IssueForm extends Form {
 	 */
 	function validate($callHooks = true) {
 		if ($temporaryFileId = $this->getData('temporaryFileId')) {
-			$request = Application::getRequest();
+			$request = Application::get()->getRequest();
 			$user = $request->getUser();
-			$temporaryFileDao = DAORegistry::getDAO('TemporaryFileDAO');
+			$temporaryFileDao = DAORegistry::getDAO('TemporaryFileDAO'); /* @var $temporaryFileDao TemporaryFileDAO */
 			$temporaryFile = $temporaryFileDao->getTemporaryFile($temporaryFileId, $user->getId());
 
 			import('classes.file.PublicFileManager');
@@ -173,17 +174,19 @@ class IssueForm extends Form {
 	/**
 	 * Save issue settings.
 	 */
-	function execute() {
-		$request = Application::getRequest();
+	function execute(...$functionArgs) {
+		parent::execute(...$functionArgs);
+
+		$request = Application::get()->getRequest();
 		$journal = $request->getJournal();
 
-		$issueDao = DAORegistry::getDAO('IssueDAO');
+		$issueDao = DAORegistry::getDAO('IssueDAO'); /* @var $issueDao IssueDAO */
 		if ($this->issue) {
 			$isNewIssue = false;
 			$issue = $this->issue;
 		} else {
 			$issue = $issueDao->newDataObject();
-			switch ($journal->getSetting('publishingMode')) {
+			switch ($journal->getData('publishingMode')) {
 				case PUBLISHING_MODE_SUBSCRIPTION:
 				case PUBLISHING_MODE_NONE:
 					$issue->setAccessStatus(ISSUE_ACCESS_SUBSCRIPTION);
@@ -201,9 +204,9 @@ class IssueForm extends Form {
 
 		$issue->setJournalId($journal->getId());
 		$issue->setTitle($this->getData('title'), null); // Localized
-		$issue->setVolume(empty($volume) ? 0 : $volume);
-		$issue->setNumber(empty($number) ? 0 : $number);
-		$issue->setYear(empty($year) ? 0 : $year);
+		$issue->setVolume(empty($volume) ? null : $volume);
+		$issue->setNumber(empty($number) ? null : $number);
+		$issue->setYear(empty($year) ? null : $year);
 		if (!$isNewIssue) {
 			$issue->setDatePublished($this->getData('datePublished'));
 		}
@@ -225,14 +228,14 @@ class IssueForm extends Form {
 		// Copy an uploaded cover file for the issue, if there is one.
 		if ($temporaryFileId = $this->getData('temporaryFileId')) {
 			$user = $request->getUser();
-			$temporaryFileDao = DAORegistry::getDAO('TemporaryFileDAO');
+			$temporaryFileDao = DAORegistry::getDAO('TemporaryFileDAO'); /* @var $temporaryFileDao TemporaryFileDAO */
 			$temporaryFile = $temporaryFileDao->getTemporaryFile($temporaryFileId, $user->getId());
 
 			import('classes.file.PublicFileManager');
 			$publicFileManager = new PublicFileManager();
 			$newFileName = 'cover_issue_' . $issue->getId() . '_' . $locale . $publicFileManager->getImageExtension($temporaryFile->getFileType());
 			$journal = $request->getJournal();
-			$publicFileManager->copyJournalFile($journal->getId(), $temporaryFile->getFilePath(), $newFileName);
+			$publicFileManager->copyContextFile($journal->getId(), $temporaryFile->getFilePath(), $newFileName);
 			$issue->setCoverImage($newFileName, $locale);
 			$issueDao->updateObject($issue);
 		}

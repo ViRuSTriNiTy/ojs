@@ -3,9 +3,9 @@
 /**
  * @file controllers/grid/issues/form/IssueGalleyForm.inc.php
  *
- * Copyright (c) 2014-2018 Simon Fraser University
- * Copyright (c) 2003-2018 John Willinsky
- * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
+ * Copyright (c) 2014-2020 Simon Fraser University
+ * Copyright (c) 2003-2020 John Willinsky
+ * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class IssueGalleyForm
  * @ingroup issue_galley
@@ -55,20 +55,22 @@ class IssueGalleyForm extends Form {
 	}
 
 	/**
-	 * Display the form.
+	 * @copydoc Form::fetch()
 	 */
-	function fetch($request) {
+	function fetch($request, $template = null, $display = false) {
 		$journal = $request->getJournal();
 		$templateMgr = TemplateManager::getManager($request);
 
-		$templateMgr->assign('issueId', $this->_issue->getId());
-		if ($this->_issueGalley) {
-			$templateMgr->assign('issueGalleyId', $this->_issueGalley->getId());
-			$templateMgr->assign('issueGalley', $this->_issueGalley);
-		}
-		$templateMgr->assign('supportedLocales', $journal->getSupportedLocaleNames());
+		$templateMgr->assign(array(
+			'issueId' => $this->_issue->getId(),
+			'supportedLocales' => $journal->getSupportedLocaleNames(),
+		));
+		if ($this->_issueGalley) $templateMgr->assign(array(
+				'issueGalleyId' => $this->_issueGalley->getId(),
+				'issueGalley' => $this->_issueGalley,
+		));
 
-		return parent::fetch($request);
+		return parent::fetch($request, $template, $display);
 	}
 
 	/**
@@ -76,7 +78,7 @@ class IssueGalleyForm extends Form {
 	 */
 	function validate($callHooks = true) {
 		// Check if public galley ID is already being used
-		$request = Application::getRequest();
+		$request = Application::get()->getRequest();
 		$journal = $request->getJournal();
 		$journalDao = DAORegistry::getDAO('JournalDAO'); /* @var $journalDao JournalDAO */
 
@@ -124,23 +126,24 @@ class IssueGalleyForm extends Form {
 	}
 
 	/**
-	 * Save changes to the galley.
-	 * @return int the galley ID
+	 * @copydoc Form::execute()
 	 */
-	function execute() {
+	function execute(...$functionArgs) {
 		import('classes.file.IssueFileManager');
 		$issueFileManager = new IssueFileManager($this->_issue->getId());
 
-		$request = Application::getRequest();
+		$request = Application::get()->getRequest();
 		$journal = $request->getJournal();
 		$user = $request->getUser();
 
 		$issueGalley = $this->_issueGalley;
-		$issueGalleyDao = DAORegistry::getDAO('IssueGalleyDAO');
+		$issueGalleyDao = DAORegistry::getDAO('IssueGalleyDAO'); /* @var $issueGalleyDao IssueGalleyDAO */
 
 		// If a temporary file ID was specified (i.e. an upload occurred), get the file for later.
-		$temporaryFileDao = DAORegistry::getDAO('TemporaryFileDAO');
+		$temporaryFileDao = DAORegistry::getDAO('TemporaryFileDAO'); /* @var $temporaryFileDao TemporaryFileDAO */
 		$temporaryFile = $temporaryFileDao->getTemporaryFile($this->getData('temporaryFileId'), $user->getId());
+
+		parent::execute(...$functionArgs);
 
 		if ($issueGalley) {
 			// Update an existing galley
@@ -199,5 +202,4 @@ class IssueGalleyForm extends Form {
 		return $this->_issueGalley->getId();
 	}
 }
-
 

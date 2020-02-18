@@ -3,9 +3,9 @@
 /**
  * @file plugins/importexport/doaj/DOAJExportPlugin.inc.php
  *
- * Copyright (c) 2014-2018 Simon Fraser University
- * Copyright (c) 2003-2018 John Willinsky
- * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
+ * Copyright (c) 2014-2020 Simon Fraser University
+ * Copyright (c) 2003-2020 John Willinsky
+ * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class DOAJExportPlugin
  * @ingroup plugins_importexport_doaj
@@ -101,7 +101,7 @@ class DOAJExportPlugin extends PubObjectsExportPlugin {
 
 	/**
 	 * @see PubObjectsExportPlugin::depositXML()
-	 * @param $objects PublishedArticle
+	 * @param $objects Submission
 	 * @param $context Context
 	 * @param $jsonString string Export JSON string
 	 * @return boolean Whether the JSON string has been registered
@@ -201,14 +201,14 @@ class DOAJExportPlugin extends PubObjectsExportPlugin {
 
 	/**
 	 * Get the JSON for selected objects.
-	 * @param $object PublishedArticle
+	 * @param $object Submission
 	 * @param $filter string
 	 * @param $context Context
 	 * @return string JSON variable.
 	 */
 	function exportJSON($object, $filter, $context) {
 		$json = '';
-		$filterDao = DAORegistry::getDAO('FilterDAO');
+		$filterDao = DAORegistry::getDAO('FilterDAO'); /* @var $filterDao FilterDAO */
 		$exportFilters = $filterDao->getObjectsByGroup($filter);
 		assert(count($exportFilters) == 1); // Assert only a single serialization filter
 		$exportFilter = array_shift($exportFilters);

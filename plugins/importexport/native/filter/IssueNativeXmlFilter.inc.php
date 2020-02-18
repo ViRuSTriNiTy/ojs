@@ -3,9 +3,9 @@
 /**
  * @file plugins/importexport/native/filter/IssueNativeXmlFilter.inc.php
  *
- * Copyright (c) 2014-2018 Simon Fraser University
- * Copyright (c) 2000-2018 John Willinsky
- * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
+ * Copyright (c) 2014-2020 Simon Fraser University
+ * Copyright (c) 2000-2020 John Willinsky
+ * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class IssueNativeXmlFilter
  * @ingroup plugins_importexport_native
@@ -132,7 +132,7 @@ class IssueNativeXmlFilter extends NativeExportFilter {
 
 		// Add pub IDs by plugin
 		$pubIdPlugins = PluginRegistry::loadCategory('pubIds', true, $deployment->getContext()->getId());
-		foreach ((array) $pubIdPlugins as $pubIdPlugin) {
+		foreach ($pubIdPlugins as $pubIdPlugin) {
 			$this->addPubIdentifier($doc, $issueNode, $issue, $pubIdPlugin);
 		}
 	}
@@ -186,15 +186,17 @@ class IssueNativeXmlFilter extends NativeExportFilter {
 	 * @param $issue Issue
 	 */
 	function addArticles($doc, $issueNode, $issue) {
-		$filterDao = DAORegistry::getDAO('FilterDAO');
+		$filterDao = DAORegistry::getDAO('FilterDAO'); /* @var $filterDao FilterDAO */
 		$nativeExportFilters = $filterDao->getObjectsByGroup('article=>native-xml');
 		assert(count($nativeExportFilters)==1); // Assert only a single serialization filter
 		$exportFilter = array_shift($nativeExportFilters);
 		$exportFilter->setDeployment($this->getDeployment());
 		$exportFilter->setIncludeSubmissionsNode(true);
 
-		$publishedArticleDao = DAORegistry::getDAO('PublishedArticleDAO');
-		$articlesDoc = $exportFilter->execute($publishedArticleDao->getPublishedArticles($issue->getId()));
+		$submissionsIterator = Services::get('submission')->getMany([
+			'issueIds' => $issue->getId(),
+		]);
+		$articlesDoc = $exportFilter->execute(iterator_to_array($submissionsIterator));
 		if ($articlesDoc->documentElement instanceof DOMElement) {
 			$clone = $doc->importNode($articlesDoc->documentElement, true);
 			$issueNode->appendChild($clone);
@@ -208,14 +210,15 @@ class IssueNativeXmlFilter extends NativeExportFilter {
 	 * @param $issue Issue
 	 */
 	function addIssueGalleys($doc, $issueNode, $issue) {
-		$filterDao = DAORegistry::getDAO('FilterDAO');
+		$filterDao = DAORegistry::getDAO('FilterDAO'); /* @var $filterDao FilterDAO */
 		$nativeExportFilters = $filterDao->getObjectsByGroup('issuegalley=>native-xml');
 		assert(count($nativeExportFilters)==1); // Assert only a single serialization filter
 		$exportFilter = array_shift($nativeExportFilters);
 		$exportFilter->setDeployment($this->getDeployment());
 
-		$issueGalleyDao = DAORegistry::getDAO('IssueGalleyDAO');
-		$issueGalleysDoc = $exportFilter->execute($issueGalleyDao->getByIssueId($issue->getId()));
+		$issueGalleyDao = DAORegistry::getDAO('IssueGalleyDAO'); /* @var $issueGalleyDao IssueGalleyDAO */
+		$issue = $issueGalleyDao->getByIssueId($issue->getId());
+		$issueGalleysDoc = $exportFilter->execute($issue);
 		if ($issueGalleysDoc->documentElement instanceof DOMElement) {
 			$clone = $doc->importNode($issueGalleysDoc->documentElement, true);
 			$issueNode->appendChild($clone);
@@ -229,10 +232,13 @@ class IssueNativeXmlFilter extends NativeExportFilter {
 	 * @param $issue Issue
 	 */
 	function addSections($doc, $issueNode, $issue) {
-		$sectionDao = DAORegistry::getDAO('SectionDAO');
+		$sectionDao = DAORegistry::getDAO('SectionDAO'); /* @var $sectionDao SectionDAO */
 		$sections = $sectionDao->getByIssueId($issue->getId());
 		$deployment = $this->getDeployment();
 		$journal = $deployment->getContext();
+
+		// Boundary condition: no sections in this issue.
+		if (!count($sections)) return;
 
 		$sectionsNode = $doc->createElementNS($deployment->getNamespace(), 'sections');
 		foreach ($sections as $section) {
@@ -244,7 +250,7 @@ class IssueNativeXmlFilter extends NativeExportFilter {
 
 			if ($section->getReviewFormId()) $sectionNode->setAttribute('review_form_id', $section->getReviewFormId());
 			$sectionNode->setAttribute('ref', $section->getAbbrev($journal->getPrimaryLocale()));
-			$sectionNode->setAttribute('seq', $section->getSequence());
+			$sectionNode->setAttribute('seq', (int) $section->getSequence());
 			$sectionNode->setAttribute('editor_restricted', $section->getEditorRestricted());
 			$sectionNode->setAttribute('meta_indexed', $section->getMetaIndexed());
 			$sectionNode->setAttribute('meta_reviewed', $section->getMetaReviewed());

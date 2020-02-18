@@ -3,9 +3,9 @@
 /**
  * @file plugins/importexport/native/filter/ArticleNativeXmlFilter.inc.php
  *
- * Copyright (c) 2014-2018 Simon Fraser University
- * Copyright (c) 2000-2018 John Willinsky
- * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
+ * Copyright (c) 2014-2020 Simon Fraser University
+ * Copyright (c) 2000-2020 John Willinsky
+ * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class ArticleNativeXmlFilter
  * @ingroup plugins_importexport_native
@@ -62,21 +62,21 @@ class ArticleNativeXmlFilter extends SubmissionNativeXmlFilter {
 
 		// Add the series, if one is designated.
 		if ($sectionId = $submission->getSectionId()) {
-			$sectionDao = DAORegistry::getDAO('SectionDAO');
+			$sectionDao = DAORegistry::getDAO('SectionDAO'); /* @var $sectionDao SectionDAO */
 			$section = $sectionDao->getById($sectionId, $submission->getContextId());
 			assert(isset($section));
 			$submissionNode->setAttribute('section_ref', $section->getLocalizedAbbrev());
 		}
 
-		$publishedArticleDao = DAORegistry::getDAO('PublishedArticleDAO');
-		$publishedArticle = $publishedArticleDao->getByArticleId($submission->getId());
-		$publishedArticle ? $submissionNode->setAttribute('seq', $publishedArticle->getSequence()) : $submissionNode->setAttribute('seq', '0');
-		$publishedArticle ? $submissionNode->setAttribute('access_status', $publishedArticle->getAccessStatus()) : $submissionNode->setAttribute('access_status', '0');
-		// if this is a published article and not part/subelement of an issue element
+		$publication = $submission->getCurrentPublication();
+		$isPublished = $publication->getData('status') === STATUS_PUBLISHED;
+		$isPublished ? $submissionNode->setAttribute('seq', (int) $publication->getData('seq')) : $submissionNode->setAttribute('seq', '0');
+		$isPublished ? $submissionNode->setAttribute('access_status', $publication->getData('accessStatus')) : $submissionNode->setAttribute('access_status', '0');
+		// if this is a published submission and not part/subelement of an issue element
 		// add issue identification element
-		if ($publishedArticle && !$deployment->getIssue()) {
-			$issueDao = DAORegistry::getDAO('IssueDAO');
-			$issue = $issueDao->getById($publishedArticle->getIssueId());
+		if ($isPublished && !$deployment->getIssue()) {
+			$issueDao = DAORegistry::getDAO('IssueDAO'); /* @var $issueDao IssueDAO */
+			$issue = $issueDao->getById($publication->getData('issueId'));
 			import('plugins.importexport.native.filter.NativeFilterHelper');
 			$nativeFilterHelper = new NativeFilterHelper();
 			$submissionNode->appendChild($nativeFilterHelper->createIssueIdentificationNode($this, $doc, $issue));

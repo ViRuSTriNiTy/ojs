@@ -3,9 +3,9 @@
 /**
  * @file controllers/tab/pubIds/form/PublicIdentifiersForm.inc.php
  *
- * Copyright (c) 2014-2018 Simon Fraser University
- * Copyright (c) 2003-2018 John Willinsky
- * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
+ * Copyright (c) 2014-2020 Simon Fraser University
+ * Copyright (c) 2003-2020 John Willinsky
+ * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class PublicIdentifiersForm
  * @ingroup controllers_tab_pubIds_form
@@ -28,13 +28,13 @@ class PublicIdentifiersForm extends PKPPublicIdentifiersForm {
 	}
 
 	/**
-	 * Store objects with pub ids.
+	 * @copydoc Form::execute()
 	 */
-	function execute() {
-		parent::execute();
+	function execute(...$functionArgs) {
+		parent::execute(...$functionArgs);
 		$pubObject = $this->getPubObject();
 		if (is_a($pubObject, 'Issue')) {
-			$issueDao = DAORegistry::getDAO('IssueDAO');
+			$issueDao = DAORegistry::getDAO('IssueDAO'); /* @var $issueDao IssueDAO */
 			$issueDao->updateObject($pubObject);
 		}
 	}
@@ -45,11 +45,9 @@ class PublicIdentifiersForm extends PKPPublicIdentifiersForm {
 	 */
 	function clearIssueObjectsPubIds($pubIdPlugInClassName) {
 		$pubIdPlugins = PluginRegistry::loadCategory('pubIds', true);
-		if (is_array($pubIdPlugins)) {
-			foreach ($pubIdPlugins as $pubIdPlugin) {
-				if (get_class($pubIdPlugin) == $pubIdPlugInClassName) {
-					$pubIdPlugin->clearIssueObjectsPubIds($this->getPubObject());
-				}
+		foreach ($pubIdPlugins as $pubIdPlugin) {
+			if (get_class($pubIdPlugin) == $pubIdPlugInClassName) {
+				$pubIdPlugin->clearIssueObjectsPubIds($this->getPubObject());
 			}
 		}
 	}

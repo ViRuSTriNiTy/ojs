@@ -3,9 +3,9 @@
 /**
  * @file classes/issue/IssueGalleyDAO.inc.php
  *
- * Copyright (c) 2014-2018 Simon Fraser University
- * Copyright (c) 2003-2018 John Willinsky
- * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
+ * Copyright (c) 2014-2020 Simon Fraser University
+ * Copyright (c) 2003-2020 John Willinsky
+ * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class IssueGalleyDAO
  * @ingroup issue_galley
@@ -166,7 +166,7 @@ class IssueGalleyDAO extends DAO {
 	 * @return ArticleGalley object
 	 */
 	function getByBestId($galleyId, $issueId) {
-		if ($galleyId != '') $galley =& $this->getByPubId('publisher-id', $galleyId, $issueId);
+		if ($galleyId != '') $galley = $this->getByPubId('publisher-id', $galleyId, $issueId);
 		if (!isset($galley) && ctype_digit("$galleyId")) $galley = $this->getById((int) $galleyId, $issueId);
 		return $galley;
 	}

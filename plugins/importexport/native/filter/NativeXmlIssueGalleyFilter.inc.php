@@ -3,9 +3,9 @@
 /**
  * @file plugins/importexport/native/filter/NativeXmlIssueGalleyFilter.inc.php
  *
- * Copyright (c) 2014-2018 Simon Fraser University
- * Copyright (c) 2000-2018 John Willinsky
- * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
+ * Copyright (c) 2014-2020 Simon Fraser University
+ * Copyright (c) 2000-2020 John Willinsky
+ * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class NativeXmlIssueGalleyFilter
  * @ingroup plugins_importexport_native
@@ -81,7 +81,7 @@ class NativeXmlIssueGalleyFilter extends NativeImportFilter {
 		for ($n = $node->firstChild; $n !== null; $n=$n->nextSibling) if (is_a($n, 'DOMElement')) switch($n->tagName) {
 			case 'label': $issueGalley->setLabel($n->textContent); break;
 			case 'issue_file':
-				$issueFileDao = DAORegistry::getDAO('IssueFileDAO');
+				$issueFileDao = DAORegistry::getDAO('IssueFileDAO'); /* @var $issueFileDao IssueFileDAO */
 				$issueFile = $issueFileDao->newDataObject();
 				$issueFile->setIssueId($issue->getId());
 
